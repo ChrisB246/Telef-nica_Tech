@@ -4,189 +4,48 @@
   "parameters": {
     "location": {
       "type": "string",
-      "defaultValue": "uksouth",
-      "metadata": {
-        "description": "Deployment Location"
-      }
+      "defaultValue": "uksouth"
     },
     "environmentNames": {
       "type": "array",
-      "defaultValue": ["dev", "test", "prod"],
-      "metadata": {
-        "description": "Environments to create"
-      }
+      "defaultValue": ["dev", "test", "prod"]
     }
   },
-  "variables": {},
-  "functions": [
-    {
-      "name": "environment",
-      "inputs": [],
-      "output": "[parameters('environmentNames')[copyIndex('env')]]"
-    },
-    {
-      "name": "dataset",
-      "inputs": [],
-      "output": "[array('bronze', 'silver', 'gold')[copyIndex('dataset')]]"
-    }
-  ],
   "resources": [
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2022-09-01",
-      "name": "[concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), environment()))]",
+      "name": "[concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), parameters('environmentNames')[copyIndex()]))]",
       "location": "[parameters('location')]",
-      "sku": {
-        "name": "Standard_LRS"
-      },
+      "sku": { "name": "Standard_LRS" },
       "kind": "StorageV2",
       "properties": {
-        "isHnsEnabled": true,
-        "networkAcls": {
-          "bypass": "AzureServices",
-          "defaultAction": "Allow"
-        }
+        "isHnsEnabled": true
       },
       "copy": {
         "name": "storageAccountsCopy",
-        "count": "[length(parameters('environmentNames'))]",
-        "mode": "Serial"
-      },
-      "dependsOn": []
+        "count": "[length(parameters('environmentNames'))]"
+      }
     },
     {
       "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
       "apiVersion": "2021-09-01",
-      "name": "[concat(
-          'synapselake',
-          uniqueString(resourceGroup().id, parameters('location'), environment()),
-          '/default/',
-          dataset()
-        )]",
+      "name": "[concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), parameters('environmentNames')[copyIndex('environmentLoop')] ), '/default/', array('bronze','silver','gold')[copyIndex('containerLoop')])]",
       "properties": {},
       "copy": [
         {
-          "name": "env",
+          "name": "environmentLoop",
           "count": "[length(parameters('environmentNames'))]"
         },
         {
-          "name": "dataset",
+          "name": "containerLoop",
           "count": 3
         }
       ],
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), environment())))]"
-      ]
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults",
-      "apiVersion": "2022-07-01",
-      "name": "[concat('kv-synapse-', environment())]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "tenantId": "[subscription().tenantId]",
-        "sku": {
-          "name": "standard"
-        },
-        "enabledForTemplateDeployment": true,
-        "accessPolicies": []
-      },
-      "copy": {
-        "name": "keyVaultsCopy",
-        "count": "[length(parameters('environmentNames'))]",
-        "mode": "Serial"
-      }
-    },
-    {
-      "type": "Microsoft.Synapse/workspaces",
-      "apiVersion": "2021-06-01",
-      "name": "[concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), environment()))]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "defaultDataLakeStorage": {
-          "accountUrl": "[reference(resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), environment())))).primaryEndpoints.dfs]"
-        },
-        "managedVirtualNetwork": "default",
-        "publicNetworkAccess": "Enabled",
-        "purviewConfiguration": {
-          "purviewResourceId": ""
-        },
-        "workspaceRepositoryConfiguration": {
-          "type": "FactoryGitHubConfiguration",
-          "hostName": "https://github.com",
-          "accountName": "",
-          "repositoryName": "",
-          "collaborationBranch": "main",
-          "rootFolder": "/",
-          "tenantId": "[subscription().tenantId]",
-          "lastCommitId": ""
-        }
-      },
-      "identity": {
-        "type": "SystemAssigned"
-      },
-      "copy": {
-        "name": "synapseWorkspacesCopy",
-        "count": "[length(parameters('environmentNames'))]",
-        "mode": "Serial"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), environment())))]"
-      ]
-    },
-    {
-      "type": "Microsoft.Synapse/workspaces/managedVirtualNetworks/managedPrivateEndpoints",
-      "apiVersion": "2021-06-01",
-      "name": "[concat(
-        concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), environment())),
-        '/default/LakeTo',
-        environment(),
-        'Endpoint'
-      )]",
-      "properties": {
-        "groupId": "dfs",
-        "privateLinkResourceId": "[resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), environment())))]",
-        "requestMessage": "Request access to ADLS"
-      },
-      "copy": {
-        "name": "managedPrivateEndpointCopy",
-        "count": "[length(parameters('environmentNames'))]",
-        "mode": "Serial"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Synapse/workspaces', concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), environment())))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), environment())))]"
-      ]
-    },
-    {
-      "type": "Microsoft.Synapse/workspaces/managedVirtualNetworks/managedPrivateEndpoints",
-      "apiVersion": "2021-06-01",
-      "name": "[concat(
-        concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), environment())),
-        '/default/KvTo',
-        environment(),
-        'Endpoint'
-      )]",
-      "properties": {
-        "groupId": "vault",
-        "privateLinkResourceId": "[resourceId('Microsoft.KeyVault/vaults', concat('kv-synapse-', environment()))]",
-        "requestMessage": "Request access to Key Vault"
-      },
-      "copy": {
-        "name": "managedPrivateEndpointKvCopy",
-        "count": "[length(parameters('environmentNames'))]",
-        "mode": "Serial"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Synapse/workspaces', concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), environment())))]",
-        "[resourceId('Microsoft.KeyVault/vaults', concat('kv-synapse-', environment()))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), parameters('environmentNames')[copyIndex('environmentLoop')])))]"
       ]
     }
-  ],
-  "outputs": {
-    "synapseWorkspaceNames": {
-      "type": "array",
-      "value": "[\n        map( parameters('environmentNames'), 'env', concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), env)) )\n      ]"
-    }
-  }
+    // ... etc ...
+  ]
 }
