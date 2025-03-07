@@ -51,7 +51,7 @@
     "sqlAdministratorLoginPassword": {
       "type": "securestring",
       "metadata": {
-        "description": "SQL administrator login password."
+        "description": "SQL administrator login password. Must be at least 8 characters long and include characters from at least three of the following categories: uppercase letters, lowercase letters, digits, and non-alphanumeric characters (e.g., !, $, #, or %)."
       }
     }
   },
@@ -66,7 +66,9 @@
         "name": "Standard_LRS"
       },
       "properties": {
-        "isHnsEnabled": true
+        "isHnsEnabled": true,
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true
       },
       "copy": {
         "name": "dataLakeLoop",
@@ -128,7 +130,10 @@
       "sku": {
         "name": "Standard_LRS"
       },
-      "properties": {},
+      "properties": {
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true
+      },
       "copy": {
         "name": "blobStorageLoop",
         "count": "[length(parameters('environments'))]"
@@ -139,6 +144,9 @@
       "apiVersion": "2021-06-01",
       "name": "[concat(parameters('synapseWorkspaceBaseName'), '-', toLower(parameters('environments')[copyIndex()]))]",
       "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()]))) ]"
       ],
