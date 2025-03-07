@@ -24,21 +24,21 @@
       "type": "string",
       "defaultValue": "cb19996synapsedls",
       "metadata": {
-        "description": "Base name for Data Lake Storage accounts. Environment suffix will be appended."
+        "description": "Base name for Data Lake Storage accounts. Environment suffix will be appended (without hyphen)."
       }
     },
     "blobStorageAccountBaseName": {
       "type": "string",
       "defaultValue": "cb19996synapseblob",
       "metadata": {
-        "description": "Base name for Blob Storage accounts. Environment suffix will be appended."
+        "description": "Base name for Blob Storage accounts. Environment suffix will be appended (without hyphen)."
       }
     },
     "synapseWorkspaceBaseName": {
       "type": "string",
       "defaultValue": "cb19996synapsews",
       "metadata": {
-        "description": "Base name for Synapse workspaces. Environment suffix will be appended."
+        "description": "Base name for Synapse workspaces. Environment suffix will be appended. (Hyphens are allowed for Synapse names.)"
       }
     },
     "sqlAdministratorLogin": {
@@ -59,7 +59,7 @@
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2021-09-01",
-      "name": "[concat(parameters('datalakeStorageAccountBaseName'), '-', toLower(parameters('environments')[copyIndex()]))]",
+      "name": "[concat(parameters('datalakeStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()]))]",
       "location": "[parameters('location')]",
       "kind": "StorageV2",
       "sku": {
@@ -78,7 +78,7 @@
           "apiVersion": "2021-09-01",
           "name": "[concat('default/', 'bronze')]",
           "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), '-', toLower(parameters('environments')[copyIndex()]))) ]"
+            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()]))) ]"
           ],
           "properties": {
             "publicAccess": "None"
@@ -89,7 +89,7 @@
           "apiVersion": "2021-09-01",
           "name": "[concat('default/', 'silver')]",
           "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), '-', toLower(parameters('environments')[copyIndex()]))) ]"
+            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()]))) ]"
           ],
           "properties": {
             "publicAccess": "None"
@@ -100,7 +100,7 @@
           "apiVersion": "2021-09-01",
           "name": "[concat('default/', 'gold')]",
           "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), '-', toLower(parameters('environments')[copyIndex()]))) ]"
+            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()]))) ]"
           ],
           "properties": {
             "publicAccess": "None"
@@ -111,7 +111,7 @@
           "apiVersion": "2021-09-01",
           "name": "[concat('default/', 'logs')]",
           "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), '-', toLower(parameters('environments')[copyIndex()]))) ]"
+            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()]))) ]"
           ],
           "properties": {
             "publicAccess": "None"
@@ -122,7 +122,7 @@
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2021-09-01",
-      "name": "[concat(parameters('blobStorageAccountBaseName'), '-', toLower(parameters('environments')[copyIndex()]))]",
+      "name": "[concat(parameters('blobStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()]))]",
       "location": "[parameters('location')]",
       "kind": "StorageV2",
       "sku": {
@@ -140,11 +140,11 @@
       "name": "[concat(parameters('synapseWorkspaceBaseName'), '-', toLower(parameters('environments')[copyIndex()]))]",
       "location": "[parameters('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), '-', toLower(parameters('environments')[copyIndex()]))) ]"
+        "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()]))) ]"
       ],
       "properties": {
         "defaultDataLakeStorage": {
-          "accountUrl": "[concat('https://', concat(parameters('datalakeStorageAccountBaseName'), '-', toLower(parameters('environments')[copyIndex()])), '.dfs.core.windows.net')]",
+          "accountUrl": "[concat('https://', concat(parameters('datalakeStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()])), '.dfs.core.windows.net')]",
           "filesystem": "bronze"
         },
         "sqlAdministratorLogin": "[parameters('sqlAdministratorLogin')]",
