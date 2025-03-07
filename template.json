@@ -4,48 +4,198 @@
   "parameters": {
     "location": {
       "type": "string",
-      "defaultValue": "uksouth"
+      "defaultValue": "uksouth",
+      "metadata": {
+        "description": "Deployment location"
+      }
     },
     "environmentNames": {
       "type": "array",
-      "defaultValue": ["dev", "test", "prod"]
+      "defaultValue": [
+        "dev",
+        "test",
+        "prod"
+      ],
+      "metadata": {
+        "description": "Environments to create"
+      }
     }
   },
+  "variables": {},
+  "functions": [
+    {
+      "namespace": "myFunctions",
+      "members": {
+        "environment": {
+          "parameters": [],
+          "output": {
+            "type": "string",
+            "value": "[parameters('environmentNames')[copyIndex('env')]]"
+          }
+        },
+        "dataset": {
+          "parameters": [],
+          "output": {
+            "type": "string",
+            "value": "[array('bronze','silver','gold')[copyIndex('dataset')]]"
+          }
+        }
+      }
+    }
+  ],
   "resources": [
+    // 1) Create Storage Accounts (one per environment)
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2022-09-01",
-      "name": "[concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), parameters('environmentNames')[copyIndex()]))]",
+      "name": "[concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment()))]",
       "location": "[parameters('location')]",
-      "sku": { "name": "Standard_LRS" },
+      "sku": {
+        "name": "Standard_LRS"
+      },
       "kind": "StorageV2",
       "properties": {
-        "isHnsEnabled": true
+        "isHnsEnabled": true,
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Allow"
+        }
       },
       "copy": {
-        "name": "storageAccountsCopy",
-        "count": "[length(parameters('environmentNames'))]"
-      }
+        "name": "env",
+        "count": "[length(parameters('environmentNames'))]",
+        "mode": "Serial"
+      },
+      "dependsOn": []
     },
+
+    // 2) Create Bronze, Silver, Gold containers inside each Storage Account
     {
       "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
       "apiVersion": "2021-09-01",
-      "name": "[concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), parameters('environmentNames')[copyIndex('environmentLoop')] ), '/default/', array('bronze','silver','gold')[copyIndex('containerLoop')])]",
+      "name": "[concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment()), '/default/', myFunctions.dataset())]",
       "properties": {},
       "copy": [
         {
-          "name": "environmentLoop",
+          "name": "env",
           "count": "[length(parameters('environmentNames'))]"
         },
         {
-          "name": "containerLoop",
+          "name": "dataset",
           "count": 3
         }
       ],
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), parameters('environmentNames')[copyIndex('environmentLoop')])))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment())))]"
+      ]
+    },
+
+    // 3) Create Key Vault (one per environment)
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2022-07-01",
+      "name": "[concat('kv-synapse-', myFunctions.environment())]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "tenantId": "[subscription().tenantId]",
+        "sku": {
+          "name": "standard"
+        },
+        "enabledForTemplateDeployment": true,
+        "accessPolicies": []
+      },
+      "copy": {
+        "name": "env",
+        "count": "[length(parameters('environmentNames'))]",
+        "mode": "Serial"
+      }
+    },
+
+    // 4) Create Synapse Workspaces (no SQL admin/password)
+    {
+      "type": "Microsoft.Synapse/workspaces",
+      "apiVersion": "2021-06-01",
+      "name": "[concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment()))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "defaultDataLakeStorage": {
+          "accountUrl": "[reference(resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment())))).primaryEndpoints.dfs]"
+        },
+        "managedVirtualNetwork": "default",
+        "publicNetworkAccess": "Enabled",
+        "purviewConfiguration": {
+          "purviewResourceId": ""
+        },
+        "workspaceRepositoryConfiguration": {
+          "type": "FactoryGitHubConfiguration",
+          "hostName": "https://github.com",
+          "accountName": "",
+          "repositoryName": "",
+          "collaborationBranch": "main",
+          "rootFolder": "/",
+          "tenantId": "[subscription().tenantId]",
+          "lastCommitId": ""
+        }
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "copy": {
+        "name": "env",
+        "count": "[length(parameters('environmentNames'))]",
+        "mode": "Serial"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment())))]"
+      ]
+    },
+
+    // 5) Private Endpoint (Storage)
+    {
+      "type": "Microsoft.Synapse/workspaces/managedVirtualNetworks/managedPrivateEndpoints",
+      "apiVersion": "2021-06-01",
+      "name": "[concat(concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment())), '/default/LakeTo', myFunctions.environment(), 'Endpoint')]",
+      "properties": {
+        "groupId": "dfs",
+        "privateLinkResourceId": "[resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment())))]",
+        "requestMessage": "Request access to ADLS"
+      },
+      "copy": {
+        "name": "env",
+        "count": "[length(parameters('environmentNames'))]",
+        "mode": "Serial"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Synapse/workspaces', concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment())))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment())))]"
+      ]
+    },
+
+    // 6) Private Endpoint (Key Vault)
+    {
+      "type": "Microsoft.Synapse/workspaces/managedVirtualNetworks/managedPrivateEndpoints",
+      "apiVersion": "2021-06-01",
+      "name": "[concat(concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment())), '/default/KvTo', myFunctions.environment(), 'Endpoint')]",
+      "properties": {
+        "groupId": "vault",
+        "privateLinkResourceId": "[resourceId('Microsoft.KeyVault/vaults', concat('kv-synapse-', myFunctions.environment()))]",
+        "requestMessage": "Request access to Key Vault"
+      },
+      "copy": {
+        "name": "env",
+        "count": "[length(parameters('environmentNames'))]",
+        "mode": "Serial"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Synapse/workspaces', concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), myFunctions.environment())))]",
+        "[resourceId('Microsoft.KeyVault/vaults', concat('kv-synapse-', myFunctions.environment()))]"
       ]
     }
-    // ... etc ...
-  ]
+  ],
+  "outputs": {
+    "synapseWorkspaceNames": {
+      "type": "array",
+      "value": "[map(parameters('environmentNames'), 'env', concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), env)))]"
+    }
+  }
 }
