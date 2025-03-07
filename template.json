@@ -51,7 +51,7 @@
     "sqlAdministratorLoginPassword": {
       "type": "securestring",
       "metadata": {
-        "description": "SQL administrator login password."
+        "description": "SQL administrator login password. Must be at least 8 characters long and include characters from at least three of the following categories: uppercase letters, lowercase letters, digits, and non-alphanumeric characters (e.g., !, $, #, or %)."
       }
     }
   },
@@ -122,49 +122,4 @@
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2021-09-01",
-      "name": "[concat(parameters('blobStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()]))]",
-      "location": "[parameters('location')]",
-      "kind": "StorageV2",
-      "sku": {
-        "name": "Standard_LRS"
-      },
-      "properties": {},
-      "copy": {
-        "name": "blobStorageLoop",
-        "count": "[length(parameters('environments'))]"
-      }
-    },
-    {
-      "type": "Microsoft.Synapse/workspaces",
-      "apiVersion": "2021-06-01",
-      "name": "[concat(parameters('synapseWorkspaceBaseName'), '-', toLower(parameters('environments')[copyIndex()]))]",
-      "location": "[parameters('location')]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()]))) ]"
-      ],
-      "properties": {
-        "defaultDataLakeStorage": {
-          "accountUrl": "[concat('https://', concat(parameters('datalakeStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()])), '.dfs.core.windows.net')]",
-          "filesystem": "bronze"
-        },
-        "sqlAdministratorLogin": "[parameters('sqlAdministratorLogin')]",
-        "sqlAdministratorLoginPassword": "[parameters('sqlAdministratorLoginPassword')]",
-        "managedResourceGroupName": "[concat(parameters('synapseWorkspaceBaseName'), '-', toLower(parameters('environments')[copyIndex()]), '-managed-rg')]"
-      },
-      "copy": {
-        "name": "synapseLoop",
-        "count": "[length(parameters('environments'))]"
-      }
-    }
-  ],
-  "outputs": {
-    "synapseWorkspaceEndpoints": {
-      "type": "object",
-      "value": {
-        "DEV": "[reference(concat(parameters('synapseWorkspaceBaseName'), '-dev')).connectivityEndpoints.web]",
-        "TEST": "[reference(concat(parameters('synapseWorkspaceBaseName'), '-test')).connectivityEndpoints.web]",
-        "PROD": "[reference(concat(parameters('synapseWorkspaceBaseName'), '-prod')).connectivityEndpoints.web]"
-      }
-    }
-  }
-}
+      "name": "[concat(parameters('blobStorageAccountBaseName'), toLower(parameters('environments')[copyIndex()]))
