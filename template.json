@@ -15,26 +15,6 @@
       "metadata": {
         "description": "Environments to create"
       }
-    },
-    "sqlAdminLogin": {
-      "type": "string",
-      "defaultValue": "synapseadmin",
-      "metadata": {
-        "description": "SQL Admin username"
-      }
-    },
-    "sqlAdminPassword": {
-      "type": "secureString",
-      "metadata": {
-        "description": "SQL Admin password"
-      }
-    },
-    "allowedIP": {
-      "type": "string",
-      "defaultValue": "0.0.0.0",
-      "metadata": {
-        "description": "IP for firewall rule (example only)"
-      }
     }
   },
   "variables": {},
@@ -126,8 +106,6 @@
         "defaultDataLakeStorage": {
           "accountUrl": "[reference(resourceId('Microsoft.Storage/storageAccounts', concat('synapselake', uniqueString(resourceGroup().id, parameters('location'), environment())))).primaryEndpoints.dfs]"
         },
-        "sqlAdministratorLogin": "[parameters('sqlAdminLogin')]",
-        "sqlAdministratorLoginPassword": "[parameters('sqlAdminPassword')]",
         "managedVirtualNetwork": "default",
         "publicNetworkAccess": "Enabled",
         "purviewConfiguration": {
@@ -142,14 +120,7 @@
           "rootFolder": "/",
           "tenantId": "[subscription().tenantId]",
           "lastCommitId": ""
-        },
-        "ipFirewallRules": [
-          {
-            "name": "AllowMyIP",
-            "startIpAddress": "[parameters('allowedIP')]",
-            "endIpAddress": "[parameters('allowedIP')]"
-          }
-        ]
+        }
       },
       "identity": {
         "type": "SystemAssigned"
