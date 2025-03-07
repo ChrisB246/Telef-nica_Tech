@@ -4,7 +4,7 @@
   "parameters": {
     "location": {
       "type": "string",
-      "defaultValue": "eastus",
+      "defaultValue": "uksouth",
       "metadata": {
         "description": "Deployment Location"
       }
@@ -215,9 +215,7 @@
   "outputs": {
     "synapseWorkspaceNames": {
       "type": "array",
-      "value": "[
-        map( parameters('environmentNames'), 'env', concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), env)) )
-      ]"
+      "value": "[\n        map( parameters('environmentNames'), 'env', concat('synapsews', uniqueString(resourceGroup().id, parameters('location'), env)) )\n      ]"
     }
   }
 }
