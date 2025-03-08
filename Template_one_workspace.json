@@ -1,0 +1,130 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "uksouth",
+      "metadata": {
+        "description": "Location for all resources. This template deploys resources in UK South."
+      }
+    },
+    "datalakeStorageAccountBaseName": {
+      "type": "string",
+      "defaultValue": "cb19996synapsedls",
+      "metadata": {
+        "description": "Base name for the Data Lake Storage account. The 'prod' suffix will be appended."
+      }
+    },
+    "synapseWorkspaceBaseName": {
+      "type": "string",
+      "defaultValue": "cb19996synapsews",
+      "metadata": {
+        "description": "Base name for the Synapse workspace. The '-prod' suffix will be appended."
+      }
+    },
+    "sqlAdministratorLogin": {
+      "type": "string",
+      "defaultValue": "sqladminuser",
+      "metadata": {
+        "description": "SQL administrator username for the Synapse workspace."
+      }
+    },
+    "sqlAdministratorLoginPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SQL administrator login password. Must be at least 8 characters long and include characters from at least three of the following categories: uppercase letters, lowercase letters, digits, and non-alphanumeric characters (e.g., !, $, #, or %)."
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-09-01",
+      "name": "[concat(parameters('datalakeStorageAccountBaseName'), 'prod')]",
+      "location": "[parameters('location')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "isHnsEnabled": true,
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true
+      },
+      "resources": [
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/bronze",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), 'prod'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/silver",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), 'prod'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/gold",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), 'prod'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/logs",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), 'prod'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.Synapse/workspaces",
+      "apiVersion": "2021-06-01",
+      "name": "[concat(parameters('synapseWorkspaceBaseName'), '-prod')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), 'prod'))]"
+      ],
+      "properties": {
+        "defaultDataLakeStorage": {
+          "accountUrl": "[concat('https://', concat(parameters('datalakeStorageAccountBaseName'), 'prod'), '.dfs.core.windows.net')]",
+          "filesystem": "bronze"
+        },
+        "sqlAdministratorLogin": "[parameters('sqlAdministratorLogin')]",
+        "sqlAdministratorLoginPassword": "[parameters('sqlAdministratorLoginPassword')]",
+        "managedResourceGroupName": "[concat(parameters('synapseWorkspaceBaseName'), '-prod-managed-rg')]"
+      }
+    }
+  ],
+  "outputs": {
+    "synapseWorkspaceEndpoint": {
+      "type": "string",
+      "value": "[reference(concat(parameters('synapseWorkspaceBaseName'), '-prod')).connectivityEndpoints.web]"
+    }
+  }
+}
