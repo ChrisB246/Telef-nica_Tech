@@ -13,14 +13,14 @@
       "type": "string",
       "defaultValue": "cb19996synapsedls",
       "metadata": {
-        "description": "Base name for the Data Lake Storage account. The 'prod' suffix will be appended."
+        "description": "Base name for the Data Lake Storage account. A unique name will be generated using this base."
       }
     },
     "synapseWorkspaceBaseName": {
       "type": "string",
       "defaultValue": "cb19996synapsews",
       "metadata": {
-        "description": "Base name for the Synapse workspace. The '-prod' suffix will be appended."
+        "description": "Base name for the Synapse workspace. '-prod' will be appended."
       }
     },
     "sqlAdministratorLogin": {
@@ -33,15 +33,18 @@
     "sqlAdministratorLoginPassword": {
       "type": "securestring",
       "metadata": {
-        "description": "SQL administrator login password. Must be at least 8 characters long and include characters from at least three of the following categories: uppercase letters, lowercase letters, digits, and non-alphanumeric characters (e.g., !, $, #, or %)."
+        "description": "SQL administrator login password. Must be at least 8 characters long and include characters from at least three of the following categories: uppercase letters, lowercase letters, digits, and non-alphanumeric characters."
       }
     }
+  },
+  "variables": {
+    "uniqueDlsName": "[toLower(concat(substring(parameters('datalakeStorageAccountBaseName'), 0, 7), 'prod', uniqueString(resourceGroup().id)))]"
   },
   "resources": [
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2021-09-01",
-      "name": "[concat(parameters('datalakeStorageAccountBaseName'), 'prod')]",
+      "name": "[variables('uniqueDlsName')]",
       "location": "[parameters('location')]",
       "kind": "StorageV2",
       "sku": {
@@ -58,7 +61,7 @@
           "apiVersion": "2021-09-01",
           "name": "default/bronze",
           "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), 'prod'))]"
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
           ],
           "properties": {
             "publicAccess": "None"
@@ -69,7 +72,7 @@
           "apiVersion": "2021-09-01",
           "name": "default/silver",
           "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), 'prod'))]"
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
           ],
           "properties": {
             "publicAccess": "None"
@@ -80,7 +83,7 @@
           "apiVersion": "2021-09-01",
           "name": "default/gold",
           "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), 'prod'))]"
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
           ],
           "properties": {
             "publicAccess": "None"
@@ -91,7 +94,7 @@
           "apiVersion": "2021-09-01",
           "name": "default/logs",
           "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), 'prod'))]"
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
           ],
           "properties": {
             "publicAccess": "None"
@@ -108,11 +111,11 @@
         "type": "SystemAssigned"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', concat(parameters('datalakeStorageAccountBaseName'), 'prod'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
       ],
       "properties": {
         "defaultDataLakeStorage": {
-          "accountUrl": "[concat('https://', concat(parameters('datalakeStorageAccountBaseName'), 'prod'), '.dfs.core.windows.net')]",
+          "accountUrl": "[concat('https://', variables('uniqueDlsName'), '.dfs.core.windows.net')]",
           "filesystem": "bronze"
         },
         "sqlAdministratorLogin": "[parameters('sqlAdministratorLogin')]",
