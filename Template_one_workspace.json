@@ -58,63 +58,12 @@
         "supportsHttpsTrafficOnly": true
       },
       "resources": [
-        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/bronze", "properties": { "publicAccess": "None" } },
-        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/silver", "properties": { "publicAccess": "None" } },
-        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/gold", "properties": { "publicAccess": "None" } },
-        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/logs", "properties": { "publicAccess": "None" } },
-        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/general", "properties": { "publicAccess": "None" } }
+        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/bronze", "dependsOn": ["[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"], "properties": { "publicAccess": "None" } },
+        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/silver", "dependsOn": ["[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"], "properties": { "publicAccess": "None" } },
+        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/gold", "dependsOn": ["[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"], "properties": { "publicAccess": "None" } },
+        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/logs", "dependsOn": ["[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"], "properties": { "publicAccess": "None" } },
+        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/general", "dependsOn": ["[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"], "properties": { "publicAccess": "None" } }
       ]
-    },
-    {
-      "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2021-09-01",
-      "name": "[variables('uniqueDlsNameTest')]",
-      "location": "[parameters('location')]",
-      "kind": "StorageV2",
-      "sku": {
-        "name": "Standard_LRS"
-      },
-      "properties": {
-        "isHnsEnabled": true,
-        "minimumTlsVersion": "TLS1_2",
-        "supportsHttpsTrafficOnly": true
-      }
-    },
-    {
-      "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2021-09-01",
-      "name": "[variables('uniqueDlsNameDev')]",
-      "location": "[parameters('location')]",
-      "kind": "StorageV2",
-      "sku": {
-        "name": "Standard_LRS"
-      },
-      "properties": {
-        "isHnsEnabled": true,
-        "minimumTlsVersion": "TLS1_2",
-        "supportsHttpsTrafficOnly": true
-      }
-    },
-    {
-      "type": "Microsoft.Synapse/workspaces",
-      "apiVersion": "2021-06-01",
-      "name": "[concat(parameters('synapseWorkspaceBaseName'), '-prod')]",
-      "location": "[parameters('location')]",
-      "identity": {
-        "type": "SystemAssigned"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"
-      ],
-      "properties": {
-        "defaultDataLakeStorage": {
-          "accountUrl": "[concat('https://', variables('uniqueDlsNameProd'), '.dfs.core.windows.net')]",
-          "filesystem": "general"
-        },
-        "sqlAdministratorLogin": "[parameters('sqlAdministratorLogin')]",
-        "sqlAdministratorLoginPassword": "[parameters('sqlAdministratorLoginPassword')]",
-        "managedResourceGroupName": "[concat(parameters('synapseWorkspaceBaseName'), '-prod-managed-rg')]"
-      }
     }
   ],
   "outputs": {
