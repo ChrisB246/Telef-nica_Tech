@@ -138,16 +138,26 @@
       }
     },
     {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2018-11-30",
+      "name": "deploymentScriptIdentity",
+      "location": "[parameters('location')]"
+    },
+    {
       "type": "Microsoft.Resources/deploymentScripts",
       "apiVersion": "2020-10-01",
       "name": "createSecurityGroups",
       "location": "[parameters('location')]",
       "kind": "AzureCLI",
       "identity": {
-        "type": "SystemAssigned"
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'deploymentScriptIdentity')]": {}
+        }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Synapse/workspaces', concat(parameters('synapseWorkspaceBaseName'), '-prod'))]"
+        "[resourceId('Microsoft.Synapse/workspaces', concat(parameters('synapseWorkspaceBaseName'), '-prod'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'deploymentScriptIdentity')]"
       ],
       "properties": {
         "azCliVersion": "2.20.0",
