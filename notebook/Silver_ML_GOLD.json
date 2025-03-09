@@ -1,0 +1,105 @@
+{
+	"name": "Silver_ML_GOLD",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "APSQLPool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "true",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "ebec2ef1-5e04-426a-939d-63a551433cc2"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/d4dfdc89-05dd-4af2-8265-12a9c38ba51a/resourceGroups/CB19996GroupSynapse/providers/Microsoft.Synapse/workspaces/synapseprodcb199666/bigDataPools/APSQLPool",
+				"name": "APSQLPool",
+				"type": "Spark",
+				"endpoint": "https://synapseprodcb199666.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/APSQLPool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "3.4",
+				"nodeCount": 10,
+				"cores": 4,
+				"memory": 28,
+				"automaticScaleJobs": false
+			},
+			"sessionKeepAliveTimeout": 10
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"import pandas as pd\n",
+					"from pyspark.sql import SparkSession\n",
+					"from pyspark.sql.functions import to_date, col, sum as _sum\n",
+					"from statsmodels.tsa.holtwinters import ExponentialSmoothing\n",
+					"\n",
+					"# Initialize Spark session\n",
+					"spark = SparkSession.builder.getOrCreate()\n",
+					"\n",
+					"# Load parquet data from the specified directory\n",
+					"directory_path = \"abfss://silver@cb19996prod6jjl7esczhw56.dfs.core.windows.net/\"\n",
+					"df = spark.read.parquet(directory_path)\n",
+					"\n",
+					"# Convert 'shipping_date' column to date format\n",
+					"df = df.withColumn(\"shipping_date\", to_date(col(\"shipping_date\"), \"yyyy-MM-dd\"))\n",
+					"\n",
+					"# Aggregate total_price by shipping_date\n",
+					"daily_data = (\n",
+					"    df.groupBy(\"shipping_date\")\n",
+					"      .agg(_sum(\"total_price\").alias(\"total_price\"))\n",
+					"      .orderBy(\"shipping_date\")\n",
+					")\n",
+					"\n",
+					"# Convert to pandas DataFrame and rename columns for forecasting\n",
+					"daily_data_pd = daily_data.toPandas().rename(\n",
+					"    columns={\"shipping_date\": \"ds\", \"total_price\": \"y\"}\n",
+					")\n",
+					"daily_data_pd[\"ds\"] = pd.to_datetime(daily_data_pd[\"ds\"])\n",
+					"\n",
+					"# Set the date column as the index\n",
+					"daily_data_pd.set_index(\"ds\", inplace=True)\n",
+					"\n",
+					"# Fit an Exponential Smoothing model (using additive trend and seasonality)\n",
+					"# Here we assume a weekly seasonality (seasonal_periods=7); adjust if needed.\n",
+					"model = ExponentialSmoothing(daily_data_pd[\"y\"],\n",
+					"                             trend=\"add\",\n",
+					"                             seasonal=\"add\",\n",
+					"                             seasonal_periods=7)\n",
+					"fit_model = model.fit()\n",
+					"\n",
+					"# Forecast the next 30 days\n",
+					"forecast = fit_model.forecast(30)\n",
+					"\n",
+					"# Convert forecast to a DataFrame for easier viewing\n",
+					"forecast_df = forecast.reset_index().rename(columns={\"index\": \"ds\", 0: \"yhat\"})\n",
+					"print(forecast_df.tail())\n",
+					""
+				],
+				"execution_count": 5
+			}
+		]
+	}
+}
