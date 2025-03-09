@@ -7,6 +7,10 @@
 			"metadata": "Workspace name",
 			"defaultValue": "synapseprodcb199666"
 		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
 		"datasource_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'datasource'"
@@ -16,15 +20,119 @@
 			"metadata": "Secure string for 'connectionString' of 'synapseprodcb199666-WorkspaceDefaultSqlServer'",
 			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:synapseprodcb199666.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
 		},
+		"AzureDataLakeStorage2_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage2'"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://cb19996dev6jjl7esczhw56.dfs.core.windows.net/"
+		},
 		"synapseprodcb199666-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://cb19996prod6jjl7esczhw56.dfs.core.windows.net"
+		},
+		"AzureDataLakeStorage2_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://cb19996prod6jjl7esczhw56.dfs.core.windows.net/"
 		}
 	},
 	"variables": {
 		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
 	},
 	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/datasource')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "datasource",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "MOCK_DATA.csv",
+						"container": "rawdata"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "order_id",
+						"type": "String"
+					},
+					{
+						"name": "customer_name",
+						"type": "String"
+					},
+					{
+						"name": "purchase_date",
+						"type": "String"
+					},
+					{
+						"name": "product_name",
+						"type": "String"
+					},
+					{
+						"name": "quantity",
+						"type": "String"
+					},
+					{
+						"name": "unit_price",
+						"type": "String"
+					},
+					{
+						"name": "total_price",
+						"type": "String"
+					},
+					{
+						"name": "payment_method",
+						"type": "String"
+					},
+					{
+						"name": "shipping_address",
+						"type": "String"
+					},
+					{
+						"name": "shipping_date",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/datasource')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
 		{
 			"name": "[concat(parameters('workspaceName'), '/datasource')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
@@ -107,6 +215,75 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/SOURCE_TO_BRONZE')]",
+			"type": "Microsoft.Synapse/workspaces/dataflows",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "datasource",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "datasource",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [],
+					"scriptLines": [
+						"source(output(",
+						"          order_id as string,",
+						"          customer_name as string,",
+						"          purchase_date as string,",
+						"          product_name as string,",
+						"          quantity as string,",
+						"          unit_price as string,",
+						"          total_price as string,",
+						"          payment_method as string,",
+						"          shipping_address as string,",
+						"          shipping_date as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> source1",
+						"source1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          order_id as string,",
+						"          customer_name as string,",
+						"          purchase_date as string,",
+						"          product_name as string,",
+						"          quantity as string,",
+						"          unit_price as string,",
+						"          total_price as string,",
+						"          payment_method as string,",
+						"          shipping_address as string,",
+						"          shipping_date as string",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('key',",
+						"          0,",
+						"          purchase_date",
+						"     )) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/datasource')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
 			"type": "Microsoft.Synapse/workspaces/credentials",
 			"apiVersion": "2019-06-01-preview",
@@ -115,6 +292,145 @@
 				"typeProperties": {}
 			},
 			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureDataLakeStorage2')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage2_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage2_accountKey')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/BRZ_SALES')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "synapseprodcb199666-WorkspaceDefaultStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "bronze"
+					},
+					"compressionCodec": "none"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/synapseprodcb199666-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SLV_SALES')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "synapseprodcb199666-WorkspaceDefaultStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "silver"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/synapseprodcb199666-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/GOLD_SALES')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "datasource",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "rawdata"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "order_id",
+						"type": "String"
+					},
+					{
+						"name": "customer_name",
+						"type": "String"
+					},
+					{
+						"name": "purchase_date",
+						"type": "String"
+					},
+					{
+						"name": "product_name",
+						"type": "String"
+					},
+					{
+						"name": "quantity",
+						"type": "String"
+					},
+					{
+						"name": "unit_price",
+						"type": "String"
+					},
+					{
+						"name": "total_price",
+						"type": "String"
+					},
+					{
+						"name": "payment_method",
+						"type": "String"
+					},
+					{
+						"name": "shipping_address",
+						"type": "String"
+					},
+					{
+						"name": "shipping_date",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/datasource')]"
+			]
 		}
 	]
 }
