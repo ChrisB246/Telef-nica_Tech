@@ -18,7 +18,7 @@
     },
     "synapseWorkspaceBaseName": {
       "type": "string",
-      "defaultValue": "cb19996synapsews",
+      "defaultValue": "cb199996synapsews",
       "metadata": {
         "description": "Base name for the Synapse workspace. '-prod' will be appended."
       }
