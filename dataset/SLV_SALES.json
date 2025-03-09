@@ -1,5 +1,5 @@
 {
-	"name": "BRZ_SALES",
+	"name": "SLV_SALES",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "synapseprodcb199666-WorkspaceDefaultStorage",
@@ -10,9 +10,9 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"fileSystem": "bronze"
+				"fileSystem": "silver"
 			},
-			"compressionCodec": "none"
+			"compressionCodec": "snappy"
 		},
 		"schema": []
 	}
