@@ -38,9 +38,7 @@
     }
   },
   "variables": {
-    "uniqueDlsNameProd": "[toLower(concat(substring(parameters('datalakeStorageAccountBaseName'), 0, 7), 'prod', uniqueString(resourceGroup().id)))]",
-    "uniqueDlsNameTest": "[toLower(concat(substring(parameters('datalakeStorageAccountBaseName'), 0, 7), 'test', uniqueString(resourceGroup().id)))]",
-    "uniqueDlsNameDev": "[toLower(concat(substring(parameters('datalakeStorageAccountBaseName'), 0, 7), 'dev', uniqueString(resourceGroup().id)))]"
+    "uniqueDlsNameProd": "[toLower(concat(substring(parameters('datalakeStorageAccountBaseName'), 0, 7), 'prod', uniqueString(resourceGroup().id)))]"
   },
   "resources": [
     {
