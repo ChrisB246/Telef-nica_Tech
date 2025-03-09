@@ -33,7 +33,28 @@
     "sqlAdministratorLoginPassword": {
       "type": "securestring",
       "metadata": {
-        "description": "SQL administrator login password. Must be at least 8 characters long and include characters from at least three of the following categories: uppercase letters, lowercase letters, digits, and non-alphanumeric characters."
+        "description": "SQL administrator login password. Must be at least 8 characters long and include characters from at least three of the following categories: uppercase letters, lowercase letters, digits, and non-alphanumeric characters (e.g., !, $, #, or %)."
+      }
+    },
+    "sqlPoolName": {
+      "type": "string",
+      "defaultValue": "sqlpool1",
+      "metadata": {
+        "description": "Name of the dedicated SQL pool."
+      }
+    },
+    "sqlPoolPerformanceLevel": {
+      "type": "string",
+      "defaultValue": "DW1000",
+      "metadata": {
+        "description": "Performance level of the dedicated SQL pool."
+      }
+    },
+    "sqlPoolMaxSizeBytes": {
+      "type": "string",
+      "defaultValue": "268435456000",
+      "metadata": {
+        "description": "Max size in bytes for the dedicated SQL pool."
       }
     }
   },
@@ -99,6 +120,17 @@
           "properties": {
             "publicAccess": "None"
           }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/general",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
         }
       ]
     },
@@ -116,11 +148,25 @@
       "properties": {
         "defaultDataLakeStorage": {
           "accountUrl": "[concat('https://', variables('uniqueDlsName'), '.dfs.core.windows.net')]",
-          "filesystem": "bronze"
+          "filesystem": "general"
         },
         "sqlAdministratorLogin": "[parameters('sqlAdministratorLogin')]",
         "sqlAdministratorLoginPassword": "[parameters('sqlAdministratorLoginPassword')]",
         "managedResourceGroupName": "[concat(parameters('synapseWorkspaceBaseName'), '-prod-managed-rg')]"
+      }
+    },
+    {
+      "type": "Microsoft.Synapse/workspaces/sqlPools",
+      "apiVersion": "2021-06-01",
+      "name": "[concat(parameters('synapseWorkspaceBaseName'), '-prod/', parameters('sqlPoolName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Synapse/workspaces', concat(parameters('synapseWorkspaceBaseName'), '-prod'))]"
+      ],
+      "properties": {
+        "collation": "SQL_Latin1_General_CP1_CI_AS",
+        "maxSizeBytes": "[parameters('sqlPoolMaxSizeBytes')]",
+        "performanceLevel": "[parameters('sqlPoolPerformanceLevel')]"
       }
     }
   ],
