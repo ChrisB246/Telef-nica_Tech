@@ -1,5 +1,5 @@
 {
-	"name": "Dataflow1",
+	"name": "SOURCE_TO_BRONZE",
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {
