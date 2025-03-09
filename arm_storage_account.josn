@@ -1,0 +1,97 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "uksouth",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "datalakeStorageAccountBaseName": {
+      "type": "string",
+      "defaultValue": "cb19996synapsedls",
+      "metadata": {
+        "description": "Base name for the Data Lake Storage account. A unique name will be generated using this base."
+      }
+    }
+  },
+  "variables": {
+    "uniqueDlsName": "[toLower(concat(substring(parameters('datalakeStorageAccountBaseName'), 0, 7), 'prod', uniqueString(resourceGroup().id)))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-09-01",
+      "name": "[variables('uniqueDlsName')]",
+      "location": "[parameters('location')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "isHnsEnabled": true,
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true
+      },
+      "resources": [
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/bronze",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/silver",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/gold",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/logs",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/general",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        }
+      ]
+    }
+  ]
+}
