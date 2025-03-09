@@ -154,26 +154,12 @@
         "sqlAdministratorLoginPassword": "[parameters('sqlAdministratorLoginPassword')]",
         "managedResourceGroupName": "[concat(parameters('synapseWorkspaceBaseName'), '-prod-managed-rg')]"
       }
-    },
-    {
-      "type": "Microsoft.Synapse/workspaces/sqlPools",
-      "apiVersion": "2021-06-01",
-      "name": "[concat(parameters('synapseWorkspaceBaseName'), '-prod/', parameters('sqlPoolName'))]",
-      "location": "[parameters('location')]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Synapse/workspaces', concat(parameters('synapseWorkspaceBaseName'), '-prod'))]"
-      ],
-      "properties": {
-        "collation": "SQL_Latin1_General_CP1_CI_AS",
-        "maxSizeBytes": "[parameters('sqlPoolMaxSizeBytes')]",
-        "performanceLevel": "[parameters('sqlPoolPerformanceLevel')]"
-      }
     }
   ],
   "outputs": {
-    "synapseWorkspaceEndpoint": {
+    "synapseServerlessSqlEndpoint": {
       "type": "string",
-      "value": "[reference(concat(parameters('synapseWorkspaceBaseName'), '-prod')).connectivityEndpoints.web]"
+      "value": "[reference(concat(parameters('synapseWorkspaceBaseName'), '-prod')).connectivityEndpoints.sqlOnDemand]"
     }
   }
 }
