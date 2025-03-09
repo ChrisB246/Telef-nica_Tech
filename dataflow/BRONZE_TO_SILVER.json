@@ -42,7 +42,7 @@
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false,",
 				"     format: 'parquet') ~> source1",
-				"source1 filter(payment_method != 'cash' && payment_method != 'PayPal') ~> filter1",
+				"source1 filter(payment_method != 'cash') ~> filter1",
 				"filter1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
@@ -50,7 +50,18 @@
 				"     preCommands: [],",
 				"     postCommands: [],",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> sink1"
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          order_id,",
+				"          customer_name,",
+				"          product_name,",
+				"          quantity,",
+				"          unit_price,",
+				"          total_price,",
+				"          payment_method,",
+				"          shipping_address,",
+				"          shipping_date",
+				"     )) ~> sink1"
 			]
 		}
 	}
