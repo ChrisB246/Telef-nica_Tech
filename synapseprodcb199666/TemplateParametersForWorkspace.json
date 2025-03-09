@@ -8,23 +8,23 @@
 		"AzureDataLakeStorage1_accountKey": {
 			"value": ""
 		},
+		"AzureDataLakeStorage2_accountKey": {
+			"value": ""
+		},
 		"datasource_connectionString": {
 			"value": ""
 		},
 		"synapseprodcb199666-WorkspaceDefaultSqlServer_connectionString": {
 			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:synapseprodcb199666.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
 		},
-		"AzureDataLakeStorage2_accountKey": {
-			"value": ""
-		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"value": "https://cb19996dev6jjl7esczhw56.dfs.core.windows.net/"
 		},
-		"synapseprodcb199666-WorkspaceDefaultStorage_properties_typeProperties_url": {
-			"value": "https://cb19996prod6jjl7esczhw56.dfs.core.windows.net"
-		},
 		"AzureDataLakeStorage2_properties_typeProperties_url": {
 			"value": "https://cb19996prod6jjl7esczhw56.dfs.core.windows.net/"
+		},
+		"synapseprodcb199666-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"value": "https://cb19996prod6jjl7esczhw56.dfs.core.windows.net"
 		}
 	}
 }
