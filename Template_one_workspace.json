@@ -35,37 +35,18 @@
       "metadata": {
         "description": "SQL administrator login password. Must be at least 8 characters long and include characters from at least three of the following categories: uppercase letters, lowercase letters, digits, and non-alphanumeric characters (e.g., !, $, #, or %)."
       }
-    },
-    "sqlPoolName": {
-      "type": "string",
-      "defaultValue": "sqlpool1",
-      "metadata": {
-        "description": "Name of the dedicated SQL pool."
-      }
-    },
-    "sqlPoolPerformanceLevel": {
-      "type": "string",
-      "defaultValue": "DW1000",
-      "metadata": {
-        "description": "Performance level of the dedicated SQL pool."
-      }
-    },
-    "sqlPoolMaxSizeBytes": {
-      "type": "string",
-      "defaultValue": "268435456000",
-      "metadata": {
-        "description": "Max size in bytes for the dedicated SQL pool."
-      }
     }
   },
   "variables": {
-    "uniqueDlsName": "[toLower(concat(substring(parameters('datalakeStorageAccountBaseName'), 0, 7), 'prod', uniqueString(resourceGroup().id)))]"
+    "uniqueDlsNameProd": "[toLower(concat(substring(parameters('datalakeStorageAccountBaseName'), 0, 7), 'prod', uniqueString(resourceGroup().id)))]",
+    "uniqueDlsNameTest": "[toLower(concat(substring(parameters('datalakeStorageAccountBaseName'), 0, 7), 'test', uniqueString(resourceGroup().id)))]",
+    "uniqueDlsNameDev": "[toLower(concat(substring(parameters('datalakeStorageAccountBaseName'), 0, 7), 'dev', uniqueString(resourceGroup().id)))]"
   },
   "resources": [
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2021-09-01",
-      "name": "[variables('uniqueDlsName')]",
+      "name": "[variables('uniqueDlsNameProd')]",
       "location": "[parameters('location')]",
       "kind": "StorageV2",
       "sku": {
@@ -75,64 +56,37 @@
         "isHnsEnabled": true,
         "minimumTlsVersion": "TLS1_2",
         "supportsHttpsTrafficOnly": true
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-09-01",
+      "name": "[variables('uniqueDlsNameTest')]",
+      "location": "[parameters('location')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
       },
-      "resources": [
-        {
-          "type": "blobServices/containers",
-          "apiVersion": "2021-09-01",
-          "name": "default/bronze",
-          "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
-          ],
-          "properties": {
-            "publicAccess": "None"
-          }
-        },
-        {
-          "type": "blobServices/containers",
-          "apiVersion": "2021-09-01",
-          "name": "default/silver",
-          "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
-          ],
-          "properties": {
-            "publicAccess": "None"
-          }
-        },
-        {
-          "type": "blobServices/containers",
-          "apiVersion": "2021-09-01",
-          "name": "default/gold",
-          "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
-          ],
-          "properties": {
-            "publicAccess": "None"
-          }
-        },
-        {
-          "type": "blobServices/containers",
-          "apiVersion": "2021-09-01",
-          "name": "default/logs",
-          "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
-          ],
-          "properties": {
-            "publicAccess": "None"
-          }
-        },
-        {
-          "type": "blobServices/containers",
-          "apiVersion": "2021-09-01",
-          "name": "default/general",
-          "dependsOn": [
-            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
-          ],
-          "properties": {
-            "publicAccess": "None"
-          }
-        }
-      ]
+      "properties": {
+        "isHnsEnabled": true,
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-09-01",
+      "name": "[variables('uniqueDlsNameDev')]",
+      "location": "[parameters('location')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "isHnsEnabled": true,
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true
+      }
     },
     {
       "type": "Microsoft.Synapse/workspaces",
@@ -143,11 +97,11 @@
         "type": "SystemAssigned"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsName'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"
       ],
       "properties": {
         "defaultDataLakeStorage": {
-          "accountUrl": "[concat('https://', variables('uniqueDlsName'), '.dfs.core.windows.net')]",
+          "accountUrl": "[concat('https://', variables('uniqueDlsNameProd'), '.dfs.core.windows.net')]",
           "filesystem": "general"
         },
         "sqlAdministratorLogin": "[parameters('sqlAdministratorLogin')]",
