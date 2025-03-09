@@ -1,0 +1,19 @@
+{
+	"name": "Sales",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "synapseprodcb199666-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileSystem": "bronze"
+			},
+			"compressionCodec": "none"
+		},
+		"schema": []
+	}
+}
