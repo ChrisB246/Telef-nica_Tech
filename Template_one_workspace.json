@@ -123,6 +123,9 @@
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"
       ],
+      "identity": {
+        "type": "SystemAssigned"
+      },
       "properties": {
         "defaultDataLakeStorage": {
           "accountUrl": "[concat('https://', variables('uniqueDlsNameProd'), '.dfs.core.windows.net')]",
@@ -130,7 +133,28 @@
         },
         "sqlAdministratorLogin": "[parameters('sqlAdministratorLogin')]",
         "sqlAdministratorLoginPassword": "[parameters('sqlAdministratorLoginPassword')]",
-        "managedResourceGroupName": "[concat(parameters('synapseWorkspaceBaseName'), '-prod-managed-rg')]"
+        "managedResourceGroupName": "[concat(parameters('synapseWorkspaceBaseName'), '-prod-managed-rg')]",
+        "managedVirtualNetwork": "default"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deploymentScripts",
+      "apiVersion": "2020-10-01",
+      "name": "createSecurityGroups",
+      "location": "[parameters('location')]",
+      "kind": "AzureCLI",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Synapse/workspaces', concat(parameters('synapseWorkspaceBaseName'), '-prod'))]"
+      ],
+      "properties": {
+        "azCliVersion": "2.20.0",
+        "timeout": "PT30M",
+        "cleanupPreference": "OnSuccess",
+        "retentionInterval": "P1D",
+        "scriptContent": "az ad group create --display-name Sales --mail-nickname Sales\naz ad group create --display-name HR --mail-nickname HR\naz ad group create --display-name IT --mail-nickname IT"
       }
     }
   ],
