@@ -58,18 +58,86 @@
         "supportsHttpsTrafficOnly": true
       },
       "resources": [
-        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/bronze", "dependsOn": ["[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"], "properties": { "publicAccess": "None" } },
-        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/silver", "dependsOn": ["[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"], "properties": { "publicAccess": "None" } },
-        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/gold", "dependsOn": ["[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"], "properties": { "publicAccess": "None" } },
-        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/logs", "dependsOn": ["[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"], "properties": { "publicAccess": "None" } },
-        { "type": "blobServices/containers", "apiVersion": "2021-09-01", "name": "default/general", "dependsOn": ["[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"], "properties": { "publicAccess": "None" } }
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/bronze",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/silver",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/gold",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/logs",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-09-01",
+          "name": "default/general",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"
+          ],
+          "properties": {
+            "publicAccess": "None"
+          }
+        }
       ]
+    },
+    {
+      "type": "Microsoft.Synapse/workspaces",
+      "apiVersion": "2021-06-01",
+      "name": "[concat(parameters('synapseWorkspaceBaseName'), '-prod')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('uniqueDlsNameProd'))]"
+      ],
+      "properties": {
+        "defaultDataLakeStorage": {
+          "accountUrl": "[concat('https://', variables('uniqueDlsNameProd'), '.dfs.core.windows.net')]",
+          "filesystem": "bronze"
+        },
+        "sqlAdministratorLogin": "[parameters('sqlAdministratorLogin')]",
+        "sqlAdministratorLoginPassword": "[parameters('sqlAdministratorLoginPassword')]",
+        "managedResourceGroupName": "[concat(parameters('synapseWorkspaceBaseName'), '-prod-managed-rg')]"
+      }
     }
   ],
   "outputs": {
     "synapseServerlessSqlEndpoint": {
       "type": "string",
-      "value": "[reference(concat(parameters('synapseWorkspaceBaseName'), '-prod')).connectivityEndpoints.sqlOnDemand]"
+      "value": "[reference(resourceId('Microsoft.Synapse/workspaces', concat(parameters('synapseWorkspaceBaseName'), '-prod'))).connectivityEndpoints.sqlOnDemand]"
     }
   }
 }
