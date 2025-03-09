@@ -1,0 +1,64 @@
+{
+	"name": "Dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "datasource",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "datasource",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [],
+			"scriptLines": [
+				"source(output(",
+				"          order_id as string,",
+				"          customer_name as string,",
+				"          purchase_date as string,",
+				"          product_name as string,",
+				"          quantity as string,",
+				"          unit_price as string,",
+				"          total_price as string,",
+				"          payment_method as string,",
+				"          shipping_address as string,",
+				"          shipping_date as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          order_id as string,",
+				"          customer_name as string,",
+				"          purchase_date as string,",
+				"          product_name as string,",
+				"          quantity as string,",
+				"          unit_price as string,",
+				"          total_price as string,",
+				"          payment_method as string,",
+				"          shipping_address as string,",
+				"          shipping_date as string",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('key',",
+				"          0,",
+				"          purchase_date",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
