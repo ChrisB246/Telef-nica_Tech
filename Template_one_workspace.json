@@ -129,7 +129,7 @@
       "properties": {
         "defaultDataLakeStorage": {
           "accountUrl": "[concat('https://', variables('uniqueDlsNameProd'), '.dfs.core.windows.net')]",
-          "filesystem": "bronze"
+          "filesystem": "general"
         },
         "sqlAdministratorLogin": "[parameters('sqlAdministratorLogin')]",
         "sqlAdministratorLoginPassword": "[parameters('sqlAdministratorLoginPassword')]",
