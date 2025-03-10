@@ -267,7 +267,7 @@
         "timeout": "PT30M",
         "cleanupPreference": "OnSuccess",
         "retentionInterval": "P1D",
-        "scriptContent": "[concat(\n          'touch empty.txt\\n',\n          'for account in ', variables('uniqueDlsNameProd'), ' ', variables('uniqueDlsNameTest'), ' ', variables('uniqueDlsNameDev'), '; do\\n',\n          '  key=$(az storage account keys list --account-name $account --query \"[0].value\" -o tsv)\\n',\n          '  for container in bronze silver gold logs general; do\\n',\n          '    echo \"Creating SALES_DATA folder in $account/$container\"\\n',\n          '    az storage blob upload --account-name $account --account-key $key --container-name $container --name SALES_DATA/.dummy --file empty.txt --overwrite --only-show-errors\\n',\n          '  done\\n',\n          'done\\n',\n          'rm empty.txt'\n        )]"
+        "scriptContent": "[concat(\n          'touch empty.txt\\n',\n          'for account in ', variables('uniqueDlsNameProd'), ' ', variables('uniqueDlsNameTest'), ' ', variables('uniqueDlsNameDev'), '; do\\n',\n          '  key=$(az storage account keys list --resource-group ', resourceGroup().name, ' --account-name $account --query \"[0].value\" -o tsv)\\n',\n          '  for container in bronze silver gold logs general; do\\n',\n          '    echo \"Creating SALES_DATA folder in $account/$container\"\\n',\n          '    az storage blob upload --account-name $account --account-key $key --container-name $container --name SALES_DATA/.dummy --file empty.txt --overwrite --only-show-errors\\n',\n          '  done\\n',\n          'done\\n',\n          'rm empty.txt'\n        )]"
       }
     }
   ]
